@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import UploadZone from '@/components/UploadZone';
 import VideoPlayer from '@/components/VideoPlayer';
-import { RiskEvent, getRiskLevel } from '@/lib/riskCategories';
+import KeyMetricsDashboard from '@/components/KeyMetricsDashboard';
+import RiskDistributionChart from '@/components/RiskDistributionChart';
+import CategoryBreakdownCards from '@/components/CategoryBreakdownCards';
+import TimelineHeatmap from '@/components/TimelineHeatmap';
+import RiskTrendGraph from '@/components/RiskTrendGraph';
+import EventDetailsPanel from '@/components/EventDetailsPanel';
+import { RiskEvent } from '@/lib/riskCategories';
 
 interface AnalysisState {
   videoNo: string;
@@ -19,6 +25,14 @@ export default function Home() {
   const [analysisState, setAnalysisState] = useState<AnalysisState | null>(null);
   const [error, setError] = useState<string>('');
   const [, setIsUploading] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleTimeJump = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+      videoRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   const handleUploadStart = () => {
     setIsUploading(true);
@@ -131,7 +145,6 @@ export default function Home() {
     }
   };
 
-  const riskLevel = analysisState ? getRiskLevel(analysisState.riskScore) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-gray-50">
@@ -195,50 +208,21 @@ export default function Home() {
           </div>
         )}
 
-        {/* Analysis Section */}
+        {/* Analysis Dashboard */}
         {analysisState && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Risk Score Header */}
+          <div className="space-y-8 animate-fade-in">
+            {/* Header with Export Controls */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Brand Safety Analysis
-                  </h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Brand Safety Dashboard</h2>
                   {analysisState.isAnalyzing ? (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
                       <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
                       Analyzing video content...
                     </div>
                   ) : (
-                    <div className="flex items-center gap-6 mt-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 font-medium">Risk Score:</span>
-                        <div className={`px-3 py-1 rounded-full text-white font-bold text-lg shadow-sm ${
-                          analysisState.riskScore >= 70 ? 'bg-red-500' :
-                          analysisState.riskScore >= 40 ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`}>
-                          {analysisState.riskScore}/100
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 font-medium">Level:</span>
-                        <span className={`px-3 py-1 rounded-full text-white font-semibold text-sm shadow-sm ${
-                          analysisState.riskScore >= 70 ? 'bg-red-500' :
-                          analysisState.riskScore >= 40 ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`}>
-                          {riskLevel?.level}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 font-medium">Events:</span>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-800 font-semibold text-sm rounded-full">
-                          {analysisState.events.length}
-                        </span>
-                      </div>
-                    </div>
+                    <p className="text-gray-600 mt-1">Comprehensive analysis results for your video content</p>
                   )}
                 </div>
 
@@ -269,15 +253,76 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Video Player */}
-            <VideoPlayer
-              videoUrl={analysisState.videoUrl}
+            {/* Key Metrics Dashboard */}
+            <KeyMetricsDashboard
               events={analysisState.events}
+              riskScore={analysisState.riskScore}
               duration={analysisState.duration}
+              isAnalyzing={analysisState.isAnalyzing}
             />
 
+            {/* Video Player Section */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-white/50">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Video Analysis</h3>
+              </div>
+              <div className="p-6">
+                <VideoPlayer
+                  ref={videoRef}
+                  videoUrl={analysisState.videoUrl}
+                  events={analysisState.events}
+                  duration={analysisState.duration}
+                />
+              </div>
+            </div>
+
+            {!analysisState.isAnalyzing && (
+              <>
+                {/* Analytics Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Risk Distribution Chart */}
+                  <RiskDistributionChart events={analysisState.events} />
+                  
+                  {/* Timeline Heatmap */}
+                  <TimelineHeatmap
+                    events={analysisState.events}
+                    duration={analysisState.duration}
+                    onTimeJump={handleTimeJump}
+                  />
+                </div>
+
+                {/* Risk Trend Graph */}
+                <RiskTrendGraph
+                  events={analysisState.events}
+                  duration={analysisState.duration}
+                  onTimeJump={handleTimeJump}
+                />
+
+                {/* Category Breakdown */}
+                <CategoryBreakdownCards
+                  events={analysisState.events}
+                  duration={analysisState.duration}
+                />
+
+                {/* Event Details Panel */}
+                <EventDetailsPanel
+                  events={analysisState.events}
+                  onTimeJump={handleTimeJump}
+                  onExportSelected={(selectedEvents) => {
+                    const blob = new Blob([JSON.stringify(selectedEvents, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `selected-events-${analysisState.videoNo}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                />
+              </>
+            )}
+
             {/* Start New Analysis */}
-            <div className="text-center">
+            <div className="text-center pt-8">
               <button
                 onClick={() => {
                   setAnalysisState(null);

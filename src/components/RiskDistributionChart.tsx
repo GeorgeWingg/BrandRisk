@@ -81,7 +81,6 @@ export default function RiskDistributionChart({ events }: RiskDistributionChartP
                 const circumference = 2 * Math.PI * 80;
                 const strokeDasharray = (cat.percentage / 100) * circumference;
                 const strokeDashoffset = -currentAngle * (circumference / 100);
-                const angle = currentAngle;
                 currentAngle += cat.percentage;
 
                 return (

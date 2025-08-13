@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { RiskEvent } from '@/lib/riskCategories';
 
 interface VideoPlayerProps {
@@ -10,8 +10,13 @@ interface VideoPlayerProps {
   onTimeUpdate?: (currentTime: number) => void;
 }
 
-export default function VideoPlayer({ videoUrl, events, duration, onTimeUpdate }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
+  ({ videoUrl, events, duration, onTimeUpdate }, ref) => {
+    const internalVideoRef = useRef<HTMLVideoElement>(null);
+    
+    useImperativeHandle(ref, () => internalVideoRef.current!);
+
+    const videoRef = internalVideoRef;
   const timelineRef = useRef<HTMLDivElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [, setIsPlaying] = useState(false);
@@ -39,7 +44,7 @@ export default function VideoPlayer({ videoUrl, events, duration, onTimeUpdate }
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [onTimeUpdate]);
+  }, [onTimeUpdate, videoRef]);
 
   const handleTimelineClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!timelineRef.current || !videoRef.current) return;
@@ -178,4 +183,8 @@ export default function VideoPlayer({ videoUrl, events, duration, onTimeUpdate }
       </div>
     </div>
   );
-}
+});
+
+VideoPlayer.displayName = 'VideoPlayer';
+
+export default VideoPlayer;
