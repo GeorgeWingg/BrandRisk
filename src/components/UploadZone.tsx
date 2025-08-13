@@ -53,7 +53,8 @@ export default function UploadZone({ onUploadComplete, onUploadStart, onError }:
       console.log('Upload response:', result);
       
       // Robust videoNo extraction for v1.2
-      function extractVideoNo(result: any) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      function extractVideoNo(result: any): string | null {
         const d = result?.data ?? result;
         return (
           d?.videoNo ??

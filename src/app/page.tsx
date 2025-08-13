@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import UploadZone from '@/components/UploadZone';
 import VideoPlayer from '@/components/VideoPlayer';
 import { RiskEvent, getRiskLevel } from '@/lib/riskCategories';
@@ -135,21 +136,25 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-transparent pb-8">
+      <div className="bg-gradient-to-b from-blue-600/8 via-purple-600/5 to-blue-50/2 pb-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
           <div className="flex items-center justify-between animate-fade-in">
             <div className="flex items-center">
-              <img 
+              <Image 
                 src="/brandrisk_transparent.png" 
                 alt="BrandRisk" 
+                width={200}
+                height={128}
                 className="h-32 w-auto transition-transform duration-300 hover:scale-105"
               />
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xl text-gray-700 font-medium">Powered by</span>
-              <img 
+              <Image 
                 src="/memories_ai_transparent.png" 
                 alt="Memories.ai" 
+                width={120}
+                height={64}
                 className="h-16 w-auto transition-transform duration-300 hover:scale-105"
               />
             </div>

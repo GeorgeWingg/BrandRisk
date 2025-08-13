@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     
     // Start transcription
     console.log('Starting transcription...');
-    const transcriptionJob = await client.startTranscription(videoNo, 'AUDIO');
+    const transcriptionJob = await client.startTranscription(videoNo);
     
     // Poll for transcription completion (simplified for hackathon)
     let transcriptionResult;

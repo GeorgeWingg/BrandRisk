@@ -93,7 +93,12 @@ export class MemoriesClient {
   }
 
   async getVideoStatus(videoNo?: string): Promise<VideoSearchResponse> {
-    const body: any = {
+    const body: {
+      page: number;
+      size: number;
+      unique: string;
+      video_no?: string;
+    } = {
       page: 1,
       size: 50,
       unique: this.uniqueId,
@@ -117,7 +122,12 @@ export class MemoriesClient {
     
     // Convert v1.2 list_videos response to our expected format
     if (result.data?.videos) {
-      const videoData = result.data.videos.map((v: any) => ({
+      const videoData = result.data.videos.map((v: {
+        video_no: string;
+        status: 'PARSE' | 'UNPARSE' | 'FAIL';
+        duration?: number;
+        create_time: string;
+      }) => ({
         videoNo: v.video_no,
         videoStatus: v.status,
         duration: v.duration || 0,
@@ -130,7 +140,7 @@ export class MemoriesClient {
     return { data: { videoData: [] } };
   }
 
-  async startTranscription(videoNo: string, type: 'AUDIO' | 'VIDEO' = 'AUDIO'): Promise<TranscriptionResponse> {
+  async startTranscription(videoNo: string): Promise<TranscriptionResponse> {
     // For v1.2, we directly get transcription without starting a task
     return { data: { taskNo: videoNo } }; // Use videoNo as taskNo for simplicity
   }
@@ -188,7 +198,13 @@ export class MemoriesClient {
     
     // Convert v1.2 search response to our expected format
     if (result.code === 'SUCCESS' && result.data?.videos) {
-      const videos = result.data.videos.map((v: any) => ({
+      const videos = result.data.videos.map((v: {
+        videoNo?: string;
+        video_no?: string;
+        fragmentStartTime?: number;
+        fragmentEndTime?: number;
+        similarity?: number;
+      }) => ({
         videoNo: v.videoNo || v.video_no,
         fragmentStartTime: v.fragmentStartTime || 0,
         fragmentEndTime: v.fragmentEndTime || 10,
@@ -201,7 +217,7 @@ export class MemoriesClient {
     return { data: { videos: [] } };
   }
 
-  async chatWithVideo(videoNos: string[], message: string, history: unknown[] = []): Promise<unknown> {
+  async chatWithVideo(videoNos: string[], message: string): Promise<unknown> {
     const response = await fetch(`${MEMORIES_API_BASE}/serve/api/v1/chat`, {
       method: 'POST',
       headers: this.getHeaders(),
