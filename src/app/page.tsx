@@ -133,24 +133,26 @@ export default function Home() {
   const riskLevel = analysisState ? getRiskLevel(analysisState.riskScore) : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-gray-50">
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <img 
-              src="/brandrisk_transparent.png" 
-              alt="BrandRisk" 
-              className="h-32 w-auto"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-lg text-gray-600">Powered by</span>
-            <img 
-              src="/memories_ai_transparent.png" 
-              alt="Memories.ai" 
-              className="h-12 w-auto"
-            />
+      <div className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-transparent pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+          <div className="flex items-center justify-between animate-fade-in">
+            <div className="flex items-center">
+              <img 
+                src="/brandrisk_transparent.png" 
+                alt="BrandRisk" 
+                className="h-32 w-auto transition-transform duration-300 hover:scale-105"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xl text-gray-700 font-medium">Powered by</span>
+              <img 
+                src="/memories_ai_transparent.png" 
+                alt="Memories.ai" 
+                className="h-16 w-auto transition-transform duration-300 hover:scale-105"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -177,20 +179,22 @@ export default function Home() {
 
         {/* Upload Section */}
         {!analysisState && (
-          <div className="max-w-2xl mx-auto">
-            <UploadZone
-              onUploadStart={handleUploadStart}
-              onUploadComplete={handleUploadComplete}
-              onError={handleError}
-            />
+          <div className="max-w-2xl mx-auto animate-fade-in">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-8 border border-white/50">
+              <UploadZone
+                onUploadStart={handleUploadStart}
+                onUploadComplete={handleUploadComplete}
+                onError={handleError}
+              />
+            </div>
           </div>
         )}
 
         {/* Analysis Section */}
         {analysisState && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in">
             {/* Risk Score Header */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/50">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
@@ -202,22 +206,30 @@ export default function Home() {
                       Analyzing video content...
                     </div>
                   ) : (
-                    <div className="flex items-center gap-4 mt-2">
+                    <div className="flex items-center gap-6 mt-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Risk Score:</span>
-                        <span className={`text-lg font-bold ${riskLevel?.color}`}>
+                        <span className="text-sm text-gray-600 font-medium">Risk Score:</span>
+                        <div className={`px-3 py-1 rounded-full text-white font-bold text-lg shadow-sm ${
+                          analysisState.riskScore >= 70 ? 'bg-red-500' :
+                          analysisState.riskScore >= 40 ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}>
                           {analysisState.riskScore}/100
-                        </span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Level:</span>
-                        <span className={`text-sm font-semibold ${riskLevel?.color}`}>
+                        <span className="text-sm text-gray-600 font-medium">Level:</span>
+                        <span className={`px-3 py-1 rounded-full text-white font-semibold text-sm shadow-sm ${
+                          analysisState.riskScore >= 70 ? 'bg-red-500' :
+                          analysisState.riskScore >= 40 ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}>
                           {riskLevel?.level}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Events:</span>
-                        <span className="text-sm font-semibold">
+                        <span className="text-sm text-gray-600 font-medium">Events:</span>
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 font-semibold text-sm rounded-full">
                           {analysisState.events.length}
                         </span>
                       </div>
@@ -227,25 +239,25 @@ export default function Home() {
 
                 {/* Export Controls */}
                 {!analysisState.isAnalyzing && analysisState.events.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Export:</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-600 font-medium">Export:</span>
                     <button
                       onClick={() => handleExport('json')}
-                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                      className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md"
                     >
-                      JSON
+                      📄 JSON
                     </button>
                     <button
                       onClick={() => handleExport('csv')}
-                      className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+                      className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md"
                     >
-                      CSV
+                      📊 CSV
                     </button>
                     <button
                       onClick={() => handleExport('srt')}
-                      className="px-3 py-1 bg-purple-500 text-white text-sm rounded hover:bg-purple-600"
+                      className="px-4 py-2 bg-purple-500 text-white text-sm font-medium rounded-lg hover:bg-purple-600 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md"
                     >
-                      SRT
+                      🎬 SRT
                     </button>
                   </div>
                 )}
@@ -266,9 +278,9 @@ export default function Home() {
                   setAnalysisState(null);
                   setError('');
                 }}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-purple-700 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
-                Analyze Another Video
+                🔄 Analyze Another Video
               </button>
             </div>
           </div>

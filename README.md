@@ -1,4 +1,4 @@
-# Brand Safety Timeline
+# BrandRisk
 
 AI-powered video content analysis for brand safety compliance. Built with Next.js and powered by Memories.ai.
 
@@ -94,7 +94,7 @@ src/
 2. Add environment variable: `MEMORIES_API_KEY`
 3. Deploy automatically
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/GeorgeWingg/brand-safety-timeline)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/GeorgeWingg/BrandRisk)
 
 ## 🎪 Hackathon Demo Script
 
