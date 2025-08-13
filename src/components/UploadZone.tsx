@@ -23,9 +23,9 @@ export default function UploadZone({ onUploadComplete, onUploadStart, onError }:
       return;
     }
 
-    // Validate file size (limit to 100MB for hackathon)
-    if (file.size > 100 * 1024 * 1024) {
-      onError('File size must be less than 100MB');
+    // Validate file size (limit to 25MB for Vercel deployment)
+    if (file.size > 25 * 1024 * 1024) {
+      onError('File size must be less than 25MB for Vercel deployment');
       return;
     }
 
@@ -45,8 +45,20 @@ export default function UploadZone({ onUploadComplete, onUploadStart, onError }:
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+        if (response.status === 413) {
+          throw new Error('File too large. Please use a smaller video file (max 25MB).');
+        }
+        
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If JSON parsing fails, use a generic message based on status
+          errorMessage = `Upload failed with status ${response.status}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -195,7 +207,7 @@ export default function UploadZone({ onUploadComplete, onUploadStart, onError }:
                 Drag and drop a video file here, or click to select
               </p>
               <p className="text-xs text-gray-400 mt-2">
-                Supported formats: MP4, AVI, MOV, WMV, FLV, WebM, MKV (max 100MB)
+                Supported formats: MP4, AVI, MOV, WMV, FLV, WebM, MKV (max 25MB)
               </p>
             </div>
             <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
