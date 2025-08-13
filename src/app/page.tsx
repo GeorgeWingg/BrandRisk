@@ -1,102 +1,288 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import UploadZone from '@/components/UploadZone';
+import VideoPlayer from '@/components/VideoPlayer';
+import { RiskEvent, getRiskLevel } from '@/lib/riskCategories';
+
+interface AnalysisState {
+  videoNo: string;
+  videoUrl: string;
+  events: RiskEvent[];
+  riskScore: number;
+  duration: number;
+  isAnalyzing: boolean;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [analysisState, setAnalysisState] = useState<AnalysisState | null>(null);
+  const [error, setError] = useState<string>('');
+  const [, setIsUploading] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const handleUploadStart = () => {
+    setIsUploading(true);
+    setError('');
+    setAnalysisState(null);
+  };
+
+  const handleUploadComplete = async (videoNo: string, videoUrl: string) => {
+    setIsUploading(false);
+    
+    // Create video element to get duration
+    const video = document.createElement('video');
+    video.src = videoUrl;
+    
+    video.onloadedmetadata = async () => {
+      const duration = video.duration;
+      
+      // Set initial state with video info
+      setAnalysisState({
+        videoNo,
+        videoUrl,
+        events: [],
+        riskScore: 0,
+        duration,
+        isAnalyzing: true,
+      });
+
+      // Start analysis
+      try {
+        const response = await fetch('/api/memories/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ videoNo }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Analysis failed');
+        }
+
+        const result = await response.json();
+        
+        setAnalysisState(prev => prev ? {
+          ...prev,
+          events: result.data.events,
+          riskScore: result.data.riskScore,
+          isAnalyzing: false,
+        } : null);
+
+      } catch (error) {
+        console.error('Analysis error:', error);
+        setError(error instanceof Error ? error.message : 'Analysis failed');
+        setAnalysisState(prev => prev ? { ...prev, isAnalyzing: false } : null);
+      }
+    };
+  };
+
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+    setIsUploading(false);
+    setAnalysisState(null);
+  };
+
+  const handleExport = async (format: string) => {
+    if (!analysisState) return;
+
+    try {
+      const response = await fetch('/api/memories/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          events: analysisState.events,
+          format,
+          videoNo: analysisState.videoNo,
+          riskScore: analysisState.riskScore,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      if (format === 'json') {
+        const result = await response.json();
+        const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `brand-safety-report-${analysisState.videoNo}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        // For CSV and SRT, response is already a file
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const extension = format === 'csv' ? 'csv' : 'srt';
+        a.download = `brand-safety-report-${analysisState.videoNo}.${extension}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      setError('Export failed');
+    }
+  };
+
+  const riskLevel = analysisState ? getRiskLevel(analysisState.riskScore) : null;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <img 
+              src="/brandrisk_transparent.png" 
+              alt="BrandRisk" 
+              className="h-32 w-auto"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-lg text-gray-600">Powered by</span>
+            <img 
+              src="/memories_ai_transparent.png" 
+              alt="Memories.ai" 
+              className="h-12 w-auto"
+            />
+          </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Error</h3>
+                <div className="mt-2 text-sm text-red-700">{error}</div>
+              </div>
+              <button
+                onClick={() => setError('')}
+                className="ml-auto text-red-400 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Section */}
+        {!analysisState && (
+          <div className="max-w-2xl mx-auto">
+            <UploadZone
+              onUploadStart={handleUploadStart}
+              onUploadComplete={handleUploadComplete}
+              onError={handleError}
+            />
+          </div>
+        )}
+
+        {/* Analysis Section */}
+        {analysisState && (
+          <div className="space-y-6">
+            {/* Risk Score Header */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Brand Safety Analysis
+                  </h2>
+                  {analysisState.isAnalyzing ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      Analyzing video content...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Risk Score:</span>
+                        <span className={`text-lg font-bold ${riskLevel?.color}`}>
+                          {analysisState.riskScore}/100
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Level:</span>
+                        <span className={`text-sm font-semibold ${riskLevel?.color}`}>
+                          {riskLevel?.level}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Events:</span>
+                        <span className="text-sm font-semibold">
+                          {analysisState.events.length}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Export Controls */}
+                {!analysisState.isAnalyzing && analysisState.events.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Export:</span>
+                    <button
+                      onClick={() => handleExport('json')}
+                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                    >
+                      JSON
+                    </button>
+                    <button
+                      onClick={() => handleExport('csv')}
+                      className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+                    >
+                      CSV
+                    </button>
+                    <button
+                      onClick={() => handleExport('srt')}
+                      className="px-3 py-1 bg-purple-500 text-white text-sm rounded hover:bg-purple-600"
+                    >
+                      SRT
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Video Player */}
+            <VideoPlayer
+              videoUrl={analysisState.videoUrl}
+              events={analysisState.events}
+              duration={analysisState.duration}
+            />
+
+            {/* Start New Analysis */}
+            <div className="text-center">
+              <button
+                onClick={() => {
+                  setAnalysisState(null);
+                  setError('');
+                }}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Analyze Another Video
+              </button>
+            </div>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="bg-white border-t mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center text-sm text-gray-500">
+            <p>Built for AI Engine Hackathon • Powered by Memories.ai • Next.js & Tailwind CSS</p>
+            <p className="mt-2">Brand Safety Timeline - Instant video content analysis</p>
+          </div>
+        </div>
       </footer>
     </div>
   );
