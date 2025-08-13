@@ -20,7 +20,7 @@ npm install
 
 ### 2. Configure Memories.ai API
 
-1. Get your API key from [Memories.ai](https://mavi-backend.memories.ai)
+1. Get your API key from [Memories.ai](https://api.memories.ai)
 2. Create account → API section → Create new API key
 3. Copy `.env.example` to `.env.local`:
 
@@ -94,7 +94,7 @@ src/
 2. Add environment variable: `MEMORIES_API_KEY`
 3. Deploy automatically
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/brand-safety-timeline)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/GeorgeWingg/brand-safety-timeline)
 
 ## 🎪 Hackathon Demo Script
 
